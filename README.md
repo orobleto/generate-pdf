@@ -41,7 +41,7 @@ La **PDF Generator API** es una API sencilla basada en Node.js que permite gener
 
 2. La API estará disponible en `http://localhost:3000`.
 
-3. Accede a la documentación de la API en `http://localhost:3000/api-docs`.
+3. Accede a la documentación de la API en `http://localhost:3000/swagger-ui`.
 
 ## Endpoints
 

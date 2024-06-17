@@ -1,0 +1,126 @@
+{
+    "info": {
+        "title": "PDF Generator API",
+        "version": "1.0.0",
+        "description": "API para generar PDFs a partir de base64 y otros parámetros"
+    },
+    "swagger": "2.0",
+    "paths": {
+        "/generate-pdf": {
+            "post": {
+                "summary": "Genera un PDF a partir de base64 y otros parámetros",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "pdfData",
+                        "description": "Datos para generar el PDF",
+                        "schema": {
+                            "type": "object",
+                            "required": [
+                                "base64",
+                                "rut",
+                                "fecha",
+                                "tipoDocumento",
+                                "producto",
+                                "jira"
+                            ],
+                            "properties": {
+                                "base64": {
+                                    "type": "string"
+                                },
+                                "rut": {
+                                    "type": "string"
+                                },
+                                "fecha": {
+                                    "type": "string"
+                                },
+                                "tipoDocumento": {
+                                    "type": "string"
+                                },
+                                "producto": {
+                                    "type": "string"
+                                },
+                                "jira": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF generado con éxito"
+                    },
+                    "400": {
+                        "description": "Error en la solicitud"
+                    },
+                    "500": {
+                        "description": "Error interno del servidor"
+                    }
+                }
+            }
+        },
+        "/generate-pdfs": {
+            "post": {
+                "summary": "Genera múltiples PDFs a partir de un arreglo de objetos",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "pdfDataArray",
+                        "description": "Datos para generar los PDFs",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "base64",
+                                    "rut",
+                                    "fecha",
+                                    "tipoDocumento",
+                                    "producto",
+                                    "jira"
+                                ],
+                                "properties": {
+                                    "base64": {
+                                        "type": "string"
+                                    },
+                                    "rut": {
+                                        "type": "string"
+                                    },
+                                    "fecha": {
+                                        "type": "string"
+                                    },
+                                    "tipoDocumento": {
+                                        "type": "string"
+                                    },
+                                    "producto": {
+                                        "type": "string"
+                                    },
+                                    "jira": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDFs generados con éxito"
+                    },
+                    "400": {
+                        "description": "Error en la solicitud"
+                    },
+                    "500": {
+                        "description": "Error interno del servidor"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {},
+    "responses": {},
+    "parameters": {},
+    "securityDefinitions": {},
+    "tags": []
+}

@@ -22,9 +22,31 @@ const swaggerOptions = {
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use('/swagger-ui', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.get('/api-docs', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerDocs);
+});
 
 app.use(bodyParser.json({ limit: '10mb' }));
+
+// Función para generar y guardar un PDF
+async function generateAndSavePdf(base64, rut, fecha, tipoDocumento, producto, jira) {
+    const pdfBytes = Buffer.from(base64, 'base64');
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+
+    const folderPath = path.join(__dirname, 'output', jira, rut);
+    const fileName = `${rut}__${producto}_${tipoDocumento}_${fecha}.pdf`;
+    const filePath = path.join(folderPath, fileName);
+
+    if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, { recursive: true });
+    }
+
+    fs.writeFileSync(filePath, await pdfDoc.save());
+
+    return filePath;
+}
 
 /**
  * @swagger
@@ -73,47 +95,80 @@ app.post('/generate-pdf', async (req, res) => {
             return res.status(400).send({ message: 'Todos los campos son obligatorios' });
         }
 
-        // Decodifica el contenido base64
-        const bytes = Buffer.from(base64, 'base64');
-
-        // Crea un nuevo documento PDF
-        const pdfDoc = await PDFDocument.create();
-
-        // Embed una página vacía en el documento
-        const page = pdfDoc.addPage();
-
-        // Embed el contenido decodificado como una imagen
-        const pngImage = await pdfDoc.embedPng(bytes);
-        const { width, height } = page.getSize();
-        const pngDims = pngImage.scale(0.5);
-
-        page.drawImage(pngImage, {
-            x: width / 2 - pngDims.width / 2,
-            y: height / 2 - pngDims.height / 2,
-            width: pngDims.width,
-            height: pngDims.height,
-        });
-
-        // Graba el PDF en bytes
-        const pdfBytes = await pdfDoc.save();
-
-        // Define el nombre del archivo y la carpeta
-        const folderPath = path.join(__dirname, 'output', jira);
-        const fileName = `${rut}__${producto}_${tipoDocumento}_${fecha}.pdf`;
-        const filePath = path.join(folderPath, fileName);
-
-        // Crea la carpeta si no existe
-        if (!fs.existsSync(folderPath)) {
-            fs.mkdirSync(folderPath, { recursive: true });
-        }
-
-        // Guarda el PDF en el sistema de archivos
-        fs.writeFileSync(filePath, pdfBytes);
-
+        const filePath = await generateAndSavePdf(base64, rut, fecha, tipoDocumento, producto, jira);
         res.send({ message: 'PDF generado con éxito', filePath });
     } catch (error) {
-        console.error(error);
-        res.status(500).send({ message: 'Error interno del servidor' });
+        console.error("Error general:", error);
+        res.status(500).send({ message: 'Error interno del servidor', details: error.message });
+    }
+});
+
+/**
+ * @swagger
+ * /generate-pdfs:
+ *   post:
+ *     summary: Genera múltiples PDFs a partir de un arreglo de objetos
+ *     parameters:
+ *       - in: body
+ *         name: pdfDataArray
+ *         description: Datos para generar los PDFs
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             required:
+ *               - base64
+ *               - rut
+ *               - fecha
+ *               - tipoDocumento
+ *               - producto
+ *               - jira
+ *             properties:
+ *               base64:
+ *                 type: string
+ *               rut:
+ *                 type: string
+ *               fecha:
+ *                 type: string
+ *               tipoDocumento:
+ *                 type: string
+ *               producto:
+ *                 type: string
+ *               jira:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: PDFs generados con éxito
+ *       400:
+ *         description: Error en la solicitud
+ *       500:
+ *         description: Error interno del servidor
+ */
+app.post('/generate-pdfs', async (req, res) => {
+    try {
+        const pdfDataArray = req.body;
+
+        if (!Array.isArray(pdfDataArray) || pdfDataArray.length === 0) {
+            return res.status(400).send({ message: 'El cuerpo de la solicitud debe ser un arreglo no vacío' });
+        }
+
+        const results = [];
+
+        for (const pdfData of pdfDataArray) {
+            const { base64, rut, fecha, tipoDocumento, producto, jira } = pdfData;
+
+            if (!base64 || !rut || !fecha || !tipoDocumento || !producto || !jira) {
+                return res.status(400).send({ message: 'Todos los campos son obligatorios' });
+            }
+
+            const filePath = await generateAndSavePdf(base64, rut, fecha, tipoDocumento, producto, jira);
+            results.push({ message: 'PDF generado con éxito', filePath });
+        }
+
+        res.send(results);
+    } catch (error) {
+        console.error("Error general:", error);
+        res.status(500).send({ message: 'Error interno del servidor', details: error.message });
     }
 });
 
